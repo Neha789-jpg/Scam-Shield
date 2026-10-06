@@ -1,240 +1,423 @@
-# TrustCheck
+# 🛡️ ScamShield
 
-TrustCheck is a local full-stack MVP that helps a buyer review explainable risk signals before paying an online seller. It accepts either a public HTTP(S) link or a PNG/JPEG/WebP screenshot and returns a lower-risk, unclear, or high-risk result.
+**ScamShield** is an AI-powered scam detection and seller risk assessment tool designed to help users identify suspicious online sellers, payment requests, and potentially fraudulent shopping interactions.
 
-TrustCheck estimates risk from available evidence. It does not certify that a seller is genuine or fraudulent.
+Instead of relying on a single AI-generated verdict, ScamShield combines **AI-powered evidence extraction, deterministic security checks, external threat intelligence, and rule-based risk scoring** to produce an explainable risk assessment.
 
-## 1. Architecture
+> ScamShield estimates risk from the available evidence. It does not guarantee that a seller is genuine or fraudulent.
 
-```text
-React + Vite browser UI
-        |
-        | /api requests
-        v
-FastAPI backend
-        |
-        +-- deterministic URL checks
-        +-- RDAP domain-age lookup
-        +-- optional Google Safe Browsing lookup
-        +-- secure image validation
-        +-- optional Gemini screenshot fact extraction
-        +-- deterministic scoring and advice
-```
+---
 
-AI extracts visible facts from screenshots but never chooses the verdict. The scoring service makes the final decision using explicit rules.
+## ✨ Key Features
 
-## 2. Project structure
+* 🔗 **URL Risk Analysis** — identifies suspicious characteristics in submitted links
+* 📸 **Screenshot Analysis** — extracts visible scam-related signals from seller screenshots
+* 🤖 **AI Agent** — coordinates different analysis tools to investigate available evidence
+* 🌐 **Domain Intelligence** — checks domain registration information and domain age
+* 🛡️ **Threat Detection** — optionally checks URLs against Google Safe Browsing
+* 💳 **Seller & Payment Analysis** — detects suspicious seller/payment-name mismatches
+* ⚠️ **Scam Signal Detection** — identifies urgency, pressure tactics, suspicious pricing, repeated reviews, and other warning signs
+* 📊 **Explainable Risk Score** — provides individual signals instead of a black-box prediction
+* 🌍 **English & Hindi Support**
+* 🔒 **Privacy-focused Processing** — uploaded screenshots are processed in memory and are not stored
 
-```text
-trustcheck/
+---
+
+## 🏗️ Architecture
+
+
+                    User
+                      |
+                      v
+              React + Vite UI
+                      |
+                /api requests
+                      |
+                      v
+               FastAPI Backend
+                      |
+                      v
+                ScamShield Agent
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+     URL Analysis  Screenshot   External
+                    Analysis    Intelligence
+          |           |           |
+          |           v           |
+          |       AI Extraction  |
+          |           |           |
+          +-----------+-----------+
+                      |
+                      v
+              Risk Scoring Engine
+                      |
+                      v
+             Explainable Verdict
+                      |
+          +-----------+-----------+
+          |           |           |
+       Lower Risk   Unclear    High Risk
+
+
+### Agentic workflow
+
+The ScamShield agent coordinates the available analysis tools instead of depending on a single model response.
+
+The tools can provide evidence such as:
+
+* URL structure warnings
+* Domain registration information
+* Safe Browsing results
+* Screenshot-derived seller signals
+* Pricing and urgency indicators
+* Payment identity mismatches
+* Repeated or generic review patterns
+
+The collected evidence is then passed through the deterministic scoring system to generate the final risk assessment.
+
+---
+
+## 📁 Project Structure
+
+
+scam-shield/
 ├── backend/
-│   ├── .env.example                  Environment variable template
-│   ├── requirements.txt              Runtime Python packages
-│   ├── requirements-dev.txt          Test packages
+│   ├── .env.example
+│   ├── requirements.txt
+│   │
 │   ├── app/
-│   │   ├── main.py                   FastAPI application and CORS
-│   │   ├── config.py                 Environment settings
-│   │   ├── schemas.py                Request/response data models
-│   │   ├── i18n.py                   English and Hindi backend text
-│   │   ├── api/routes.py             HTTP endpoints
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   ├── schemas.py
+│   │   ├── i18n.py
+│   │   │
+│   │   ├── agent/
+│   │   │   ├── __init__.py
+│   │   │   ├── agent.py
+│   │   │   └── tools.py
+│   │   │
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   └── routes.py
+│   │   │
 │   │   └── services/
-│   │       ├── url_analyzer.py       Local URL warning signals
-│   │       ├── domain_registration.py RDAP domain-age lookup
-│   │       ├── safe_browsing.py      Optional Google threat lookup
-│   │       ├── screenshot_analyzer.py Image validation and Gemini extraction
-│   │       └── scoring.py            Risk score, verdict, confidence, advice
-│   └── tests/                         Backend automated tests
+│   │       ├── __init__.py
+│   │       ├── url_analyzer.py
+│   │       ├── domain_registration.py
+│   │       ├── safe_browsing.py
+│   │       ├── screenshot_analyzer.py
+│   │       └── scoring.py
+│   │
+│   └── tests/
+│       ├── test_main.py
+│       ├── test_scoring.py
+│       └── test_url_analyzer.py
+│
 ├── frontend/
-│   ├── package.json                  JavaScript packages and commands
-│   ├── vite.config.ts                Vite proxy and test configuration
-│   ├── index.html                    Browser entry document
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── vite.config.ts
+│   ├── index.html
+│   │
 │   └── src/
-│       ├── main.tsx                  React entry point
-│       ├── App.tsx                   Main page and application state
-│       ├── api.ts                    Backend API calls
-│       ├── types.ts                  Shared frontend TypeScript types
-│       ├── i18n.ts                   English and Hindi interface text
-│       ├── styles.css                Responsive visual design
-│       └── components/
-│           ├── CheckForm.tsx         Link/screenshot input forms
-│           ├── VerdictCard.tsx       Result summary and advice
-│           └── SignalList.tsx        Individual evidence cards
+│       ├── main.tsx
+│       ├── App.tsx
+│       ├── api.ts
+│       ├── types.ts
+│       ├── i18n.ts
+│       ├── styles.css
+│       │
+│       ├── components/
+│       │   ├── CheckForm.tsx
+│       │   ├── VerdictCard.tsx
+│       │   └── SignalList.tsx
+│       │
+│       └── test/
+│           └── setup.ts
+│
 └── .gitignore
-```
 
-## 3. Create the project from scratch
+
+---
+
+## 🚀 Running Locally
+
+### Prerequisites
+
+* Python 3.11+
+* Node.js 20+
+* Git
+
+### 1. Clone the repository
 
 ```bash
-mkdir trustcheck
-cd trustcheck
-mkdir -p backend/app/api backend/app/services backend/tests
-mkdir -p frontend/src/components frontend/src/test
+git clone https://github.com/Neha789-jpg/Scam-Shield.git
+cd Scam-Shield
 ```
 
-The completed source files are already present in this project, so these commands are only needed if rebuilding it manually.
+---
 
-## 4. Backend setup
-
-Install Python 3.11 or newer, then run:
+## ⚙️ Backend Setup
 
 ```bash
 cd backend
 python -m venv .venv
 ```
 
-Activate the environment on Windows Command Prompt:
-
-```bat
-.venv\Scripts\activate.bat
-```
-
-Or run its Python executable directly from Git Bash:
+Activate the virtual environment on Windows:
 
 ```bash
-.venv/Scripts/python.exe -m pip install -r requirements-dev.txt
+.venv\Scripts\activate
 ```
 
-Create your private settings file:
+Install dependencies:
 
 ```bash
-cp .env.example .env
+pip install -r requirements.txt
 ```
 
-API keys are optional. Without them, local link checks still work and screenshot uploads return an honest `unclear` result explaining that vision analysis is unavailable.
-
-```env
-GOOGLE_SAFE_BROWSING_API_KEY=
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash
-```
-
-Start the backend:
+Create the environment file:
 
 ```bash
-.venv/Scripts/python.exe -m uvicorn app.main:app --reload
+copy .env.example .env
 ```
 
-The API runs on `http://127.0.0.1:8000`. Interactive API documentation is at `http://127.0.0.1:8000/docs`.
+Configure the required API keys in `.env`.
 
-Run backend tests:
+**Never commit `.env` to GitHub.**
+
+Start the FastAPI server:
 
 ```bash
-.venv/Scripts/python.exe -m pytest -q
+python -m uvicorn app.main:app --reload
 ```
 
-## 5. Frontend setup
+The backend runs at:
 
-Install Node.js 20 or newer. Open a second terminal:
+
+http://127.0.0.1:8000
+
+
+Interactive API documentation:
+
+
+http://127.0.0.1:8000/docs
+
+### Run backend tests
 
 ```bash
-cd trustcheck/frontend
+pytest -q
+```
+
+---
+
+## 💻 Frontend Setup
+
+Open a second terminal:
+
+```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173`. Vite forwards `/api` calls to the FastAPI server on port 8000.
+Open:
 
-Run frontend tests and create a production build:
+http://127.0.0.1:5173
+
+
+The Vite development server forwards `/api` requests to the FastAPI backend.
+
+### Run frontend tests
 
 ```bash
 npm test
+```
+
+### Create a production build
+
+```bash
 npm run build
 ```
 
-## 6. API endpoints
+---
 
-### Health
+## 🔍 Analysis Pipeline
 
-```http
-GET /api/health
+### URL Analysis
+
+ScamShield checks submitted URLs for signals including:
+
+* HTTP instead of HTTPS
+* Common URL shorteners
+* Punycode hostnames
+* Excessive subdomain levels
+* Suspicious keywords in hostnames
+* Claimed-brand mismatches
+* Recently registered domains
+* Known threats reported by Safe Browsing
+
+### Screenshot Analysis
+
+For seller screenshots, ScamShield can identify signals such as:
+
+* New profiles with unusually high follower counts
+* Stock/reused-looking product images
+* Seller/payment-name mismatches
+* Urgency language
+* High-pressure language
+* Unusually low prices
+* Generic or repeated reviews
+
+The AI component extracts visible evidence; it does **not independently decide whether the seller is fraudulent**.
+
+---
+
+## 📊 Risk Scoring
+
+ScamShield uses explicit scoring rules to make its results explainable.
+
+### URL signals
+
+| Signal                                  |           Risk |
+| --------------------------------------- | -------------: |
+| HTTP instead of HTTPS                   |            +15 |
+| Common link shortener                   |            +12 |
+| Punycode hostname                       |            +15 |
+| More than two subdomain levels          |             +8 |
+| Suspicious hostname keywords            |             +8 |
+| Close but non-exact claimed-brand match |            +25 |
+| Domain younger than 30 days             |            +25 |
+| Domain 30–179 days old                  |            +15 |
+| Domain 180–364 days old                 |             +8 |
+| Google Safe Browsing match              | +60 + Critical |
+
+### Screenshot signals
+
+| Signal                             | Risk |
+| ---------------------------------- | ---: |
+| New profile with ≥10,000 followers |  +20 |
+| Strong stock/reused-image signal   |  +15 |
+| Payment-name mismatch              |  +30 |
+| Urgency language                   |  +10 |
+| Extreme pressure language          |  +15 |
+| Price ≤40% of reference price      |  +20 |
+| Price ≤70% of reference price      |  +10 |
+| Generic/repeated reviews           |  +10 |
+
+### Verdicts
+
+
+0–19     → Lower Risk
+20–44    → Unclear
+45–100   → High Risk
+
+
+A critical Safe Browsing match produces a **High Risk** verdict regardless of the calculated score.
+
+Missing evidence does not automatically increase the risk score. Instead, it can reduce the confidence of the assessment.
+
+---
+
+## 🔐 Security & Privacy
+
+ScamShield follows several security-focused design decisions:
+
+* Only HTTP(S) URLs with public domain names are accepted.
+* Credentials, localhost URLs, internal domains, IP-address URLs, and unusual ports are rejected.
+* Submitted URLs are not directly fetched by the application, reducing SSRF risk.
+* Uploaded images are validated by MIME type, decoded format, file size, and pixel count.
+* Screenshots are processed in memory and are not permanently stored.
+* Screenshot content is treated as untrusted input during AI analysis.
+* API keys are stored in `.env` and excluded from version control.
+
+---
+
+## 🧪 Testing
+
+The backend includes automated tests covering:
+
+* API health and application behavior
+* URL analysis
+* Risk scoring
+
+The frontend also includes automated tests for application behavior.
+
+Run backend tests:
+
+```bash
+pytest -q
 ```
 
-### Available integrations
+Run frontend tests:
 
-```http
-GET /api/capabilities
+```bash
+npm test
 ```
 
-### Analyze a link
+---
 
-```http
-POST /api/check/url
-Content-Type: application/json
-```
+## 🔮 Future Improvements
 
-```json
-{
-  "url": "https://example.com",
-  "language": "en",
-  "claimed_brand": "Example"
-}
-```
+Potential next steps include:
 
-### Analyze a screenshot
+1. Build a reviewed community scam-report database with abuse controls.
+2. Add reverse-image-search evidence for stronger image verification.
+3. Integrate verified seller/payment identity sources.
+4. Calibrate the scoring system using a labeled scam dataset.
+5. Measure false-positive and false-negative rates.
+6. Add authentication and consent-based analysis history.
+7. Add rate limiting, monitoring, and production deployment configuration.
+8. Extend ScamShield into a browser extension.
+9. Explore messaging-platform workflows for real-time scam analysis.
 
-```http
-POST /api/check/screenshot
-Content-Type: multipart/form-data
-```
+---
 
-Fields:
+## 🎯 Why ScamShield?
 
-- `file`: PNG, JPEG, or WebP, maximum 5 MB
-- `language`: `en` or `hi`
-- `expected_seller_name`: optional seller name
-- `reference_price`: optional normal market price
-- `currency`: defaults to `INR`
+Online scams increasingly rely on **social engineering rather than obviously malicious links**. A seller may use a convincing profile, attractive product images, fake reviews, urgency, and a legitimate-looking payment request.
 
-## 7. Current scoring logic
+ScamShield aims to bring these scattered signals together into a single, **explainable risk assessment** so users can make a more informed decision before sending money.
 
-URL warnings:
+---
 
-- HTTP instead of HTTPS: +15
-- Common link shortener: +12
-- Punycode hostname: +15
-- More than two subdomain levels: +8
-- Sensitive words in hostname: +8
-- Close but non-exact claimed-brand match: +25
-- Domain younger than 30 days: +25
-- Domain 30–179 days old: +15
-- Domain 180–364 days old: +8
-- Google Safe Browsing match: +60 and critical
+## 🛠️ Tech Stack
 
-Screenshot warnings:
+**Frontend**
 
-- New profile with at least 10,000 followers: +20
-- Strong stock/reused-looking image signal: +15
-- Payment name mismatch: +30
-- Urgency language: +10
-- Extreme pressure language: +15
-- Price at most 40% of reference price: +20
-- Price at most 70% of reference price: +10
-- Generic or repeated reviews: +10
+* React
+* TypeScript
+* Vite
+* CSS
 
-Verdicts:
+**Backend**
 
-- `0–19`: lower risk when enough checks completed
-- `20–44`: unclear
-- `45–100`: high risk
-- A critical Safe Browsing match always produces high risk
-- Missing evidence adds no risk points and lowers confidence
+* Python
+* FastAPI
 
-## 8. Security decisions
+**AI / Analysis**
 
-- The backend accepts only HTTP(S) links with public domain names.
-- Credentials, localhost, internal suffixes, IP-address URLs, and unusual ports are rejected.
-- The MVP does not fetch submitted websites directly, preventing the URL endpoint from becoming an SSRF proxy.
-- Images are checked by MIME type, decoded format, byte size, and pixel count.
-- Uploaded screenshots are processed in memory and are not stored.
-- Screenshot text is treated as untrusted input in the Gemini prompt.
-- API keys remain in `backend/.env`, which is excluded from version control.
+* AI-powered screenshot analysis
+* Agent-based tool orchestration
+* Rule-based risk scoring
 
-## 9. What to build after the MVP
+**Security / External Intelligence**
 
-1. Add authenticated accounts and consent-based history.
-2. Add a reviewed community-report database with abuse controls.
-3. Add reverse-image-search evidence instead of relying on visual similarity alone.
-4. Integrate a verified payment-provider or seller-identity source before claiming ownership matches.
-5. Calibrate scoring against a labeled dataset and measure false positives.
-6. Add rate limits, monitoring, privacy retention rules, and production deployment configuration.
-7. Build the browser extension and WhatsApp workflow proposed in the presentation.
+* RDAP domain registration data
+* Google Safe Browsing
+* Secure image validation
+
+**Testing**
+
+* Pytest
+* Vitest
+
+---
+
+## 📌 Disclaimer
+
+ScamShield is a prototype designed to assist users in identifying potential scam signals.
+
+A **Lower Risk** result does not prove that a seller is genuine, and a **High Risk** result does not by itself prove fraud. Users should independently verify sellers and payment information before making transactions.
